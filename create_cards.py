@@ -1,6 +1,6 @@
 import openpyxl as xl
 import re
-import os
+
 
 
 def create_cards(filename):
