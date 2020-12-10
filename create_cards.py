@@ -1,8 +1,5 @@
 import openpyxl as xl
 import re
-import os
-
-
 
 def grid_card(type,row_start,row_end,col_1,col_2,col_3,node_value,file,worksheet):
     for row in range(row_start, row_end): #worksheet.max_row
