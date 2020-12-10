@@ -1,7 +1,65 @@
 import openpyxl as xl
 import re
+import os
 
 
+
+def grid_card(type,row_start,row_end,col_1,col_2,col_3,node_value,file,worksheet):
+    for row in range(row_start, row_end): #worksheet.max_row
+        x = worksheet.cell(row,col_1).value
+        y = worksheet.cell(row,col_2).value
+        z = worksheet.cell(row,col_3).value
+
+        grid_string= f"GRID,{node_value},0,{x},{y},{z}"
+
+        if (row == row_start):
+            file.write(f"{type} for {worksheet.title}")
+            file.write("\n")
+        file.write(grid_string)
+        file.write("\n")
+        node_value +=1        
+    
+    file.write("\n")
+    return node_value    
+
+def force_card(type,row_start,row_end,col_1,col_2,col_3,node_value,file,worksheet):
+    for row in range(row_start, row_end): #worksheet.max_row
+        Fx = worksheet.cell(row,col_1).value
+        Fy = worksheet.cell(row,col_2).value
+        Fz = worksheet.cell(row,col_3).value
+        force_id = re.compile(r"[^LC0].*")
+        force_id = force_id.findall(worksheet.title)[0]
+        force_string = f"FORCE,{force_id},{node_value},0,1.0,{Fx},{Fy},{Fz}"
+
+        if (row == row_start):
+            file.write(f"{type} for {worksheet.title}")
+            file.write("\n")
+        file.write(force_string)
+        file.write("\n")
+        node_value += 1
+
+    file.write("\n")
+    return node_value
+
+def moment_card(type,row_start,row_end,col_1,col_2,col_3,node_value,file,worksheet):
+    for row in range(row_start,row_end):
+        # MOMENT,MomentID,Node,0,1.0,Mx,My,Mz
+        Mx = worksheet.cell(row,col_1).value
+        My = worksheet.cell(row,col_2).value
+        Mz = worksheet.cell(row,col_3).value
+        moment_id = re.compile(r"[^LC0].*")
+        moment_id = moment_id.findall(worksheet.title)[0]
+
+        moment_string = f"MOMENT,{moment_id},{node_value},0,1.0,{Mx},{My},{Mz}"
+
+        if (row == row_start):
+            file.write(f"{type} for {worksheet.title}")
+            file.write("\n")
+        file.write(moment_string)
+        file.write("\n")
+        node_value +=1    
+    file.write("\n")
+    return node_value
 
 def create_cards(filename):
     wb = xl.load_workbook(filename, data_only=True)
@@ -12,251 +70,63 @@ def create_cards(filename):
     for worksheets in wb.sheetnames:
         worksheet = wb[worksheets]
         if worksheet.title in sheets_names:
-            text_file = open(f"Output/{worksheet.title}.txt", "a+")
+            text_file = open(f"Output2/{worksheet.title}.txt", "a+")
             LC_id = re.compile(r"[^LC0].*")
             LC_id = LC_id.findall(worksheet.title)[0]
             LC_id = 100 * int(LC_id)
              
             #GRID INERTIAL 
-            node_grid_inertial = 3800001 +LC_id
-            for row in range(36, 42): #worksheet.max_row
-                x_inertial = worksheet.cell(row,2).value
-                y_inertial = worksheet.cell(row,3).value
-                z_inertial = worksheet.cell(row,4).value
-
-           
-                grid_string_inertial= f"GRID,{node_grid_inertial},0,{x_inertial},{y_inertial},{z_inertial}"
-        
-                if (row == 36):
-                    text_file.write(f"BULKHEAD__GRID__INTERTIAL for {worksheet.title}")
-                    text_file.write("\n")
-                text_file.write(grid_string_inertial)
-                text_file.write("\n")
-                node_grid_inertial +=1
-
-            text_file.write("\n")
+            BH_node_grid_inertial = 3800001 +LC_id
+            BH_node_grid_inertial = grid_card("BULKHEAD__GRID__INERTIAL",36,42,2,3,4,BH_node_grid_inertial,text_file,worksheet)          
             
             #FORCE_INERTIAL
-            node_f_inertial = 3800001 + LC_id
-            for row in range(36, 42): #worksheet.max_row
-                Fx_inertial = worksheet.cell(row,5).value
-                Fy_inertial = worksheet.cell(row,6).value
-                Fz_inertial = worksheet.cell(row,7).value
-                force_id = re.compile(r"[^LC0].*")
-                force_id = force_id.findall(worksheet.title)[0]
-                force_string_inertial = f"FORCE,{force_id},{node_f_inertial},0,1.0,{Fx_inertial},{Fy_inertial},{Fz_inertial}"
-
-                if (row == 36):
-                    text_file.write(f"BULKHEAD__FORCE__INTERTIAL for {worksheet.title}")
-                    text_file.write("\n")
-                text_file.write(force_string_inertial)
-                text_file.write("\n")
-                node_f_inertial += 1
-
-            text_file.write("\n")
+            BH_node_f_inertial = 3800001 + LC_id
+            BH_node_f_inertial = force_card("BULKHEAD__FORCE__INERTIAL",36,42,5,6,7,BH_node_f_inertial,text_file,worksheet)
 
             #GRID AERO 
-            node_grid_aero = node_grid_inertial  
-            for row in range(36, 42): #worksheet.max_row
-                x_aero = worksheet.cell(row,2).value
-                y_aero = worksheet.cell(row,8).value
-                z_aero = worksheet.cell(row,9).value
-
-                grid_string_aero= f"GRID,{node_grid_aero},0,{x_aero},{y_aero},{z_aero}"
-
-
-                if (row == 36):
-                    text_file.write(f"BULKHEAD__GRID__AERO for {worksheet.title}")
-                    text_file.write("\n")
-                text_file.write(grid_string_aero)
-                text_file.write("\n")
-                node_grid_aero += 1    
-
-            text_file.write("\n")
-
+            BH_node_grid_aero = BH_node_grid_inertial
+            BH_node_grid_aero = grid_card("BULKHEAD__GRID__AERO",36,42,2,8,9,BH_node_grid_aero,text_file,worksheet)  
+           
             # FORCE_AERO
-            node_f_aero = node_f_inertial 
-            for row in range(36, 42): #worksheet.max_row
-                Fx_aero = worksheet.cell(row,10).value
-                Fy_aero = worksheet.cell(row,11).value
-                Fz_aero = worksheet.cell(row,12).value
-
-                force_id = re.compile(r"[^LC0].*")
-                force_id = force_id.findall(worksheet.title)[0]
-                force_string_aero = f"FORCE,{force_id},{node_f_aero},0,1.0,{Fx_aero},{Fy_aero},{Fz_aero}"
-
-                if (row == 36):
-                    text_file.write(f"BULKHEAD__FORCE__AERO for {worksheet.title}")
-                    text_file.write("\n")
-                text_file.write(force_string_aero)
-                text_file.write("\n")
-                node_f_aero += 1    
-
-            text_file.write("\n")            
-
-            # HT_VT_GRID_INERTIAL
-            ht_vt_grid_node_intertial = 3900001 + LC_id
-            for row in range(7,10):
-                # MOMENT,MomentID,Node,0,1.0,Mx,My,Mz
-                x_inertial =  worksheet.cell(row, 15).value   
-                y_inertial =  worksheet.cell(row, 16).value   
-                z_inertial =  worksheet.cell(row, 17).value   
-                
-                grid_string_inertial= f"GRID,{ht_vt_grid_node_intertial},0,{x_inertial},{y_inertial},{z_inertial}"
-                if (row == 7):
-                    text_file.write(f"HT-VT__GRID_INERTIAL for {worksheet.title}")
-                    text_file.write("\n")
-                text_file.write(grid_string_inertial)
-                text_file.write("\n")
-                
-                ht_vt_grid_node_intertial +=1      
-
-            text_file.write("\n")
-
-            # HT_VT_FORCE_INERTIAL
-            ht_vt_force_node_intertial = 3900001 + LC_id
-            for row in range(7,10):
-                # MOMENT,MomentID,Node,0,1.0,Mx,My,Mz
-                Fx_inertial = worksheet.cell(row,18).value
-                Fy_inertial = worksheet.cell(row,19).value
-                Fz_inertial = worksheet.cell(row,20).value
-                force_id = re.compile(r"[^LC0].*")
-                force_id = force_id.findall(worksheet.title)[0]
-                force_string_inertial = f"FORCE,{force_id},{ht_vt_force_node_intertial},0,1.0,{Fx_inertial},{Fy_inertial},{Fz_inertial}"
-    
-                if (row == 7):
-                    text_file.write(f"HT-VT__FORCE__INERTIAL for {worksheet.title}")
-                    text_file.write("\n")
-                text_file.write(force_string_inertial)
-                text_file.write("\n")
-                
-                ht_vt_force_node_intertial +=1
+            BH_node_f_aero = BH_node_f_inertial 
+            BH_node_f_aero = force_card("BULKHEAD__FORCE__AERO",36,42,10,11,12,BH_node_f_aero,text_file,worksheet)
             
-            text_file.write("\n")
-
+            # HT_VT_GRID_INERTIAL
+            ht_vt_grid_node_inertial = 3900001 + LC_id
+            ht_vt_grid_node_inertial = grid_card("HT-VT__GRID_INERTIAL",7,10,15,16,17,ht_vt_grid_node_inertial,text_file,worksheet) 
+           
+            # HT_VT_FORCE_INERTIAL
+            ht_vt_force_node_inertial = 3900001 + LC_id
+            ht_vt_force_node_inertial = force_card("HT-VT__FORCE__INERTIAL",7,10,18,19,20,ht_vt_force_node_inertial,text_file,worksheet)
+     
             # HT_VT_MOMENT_INERTIAL
             ht_vt_mom_node_inertial = 3900001 + LC_id
-            for row in range(7,10):
-                # MOMENT,MomentID,Node,0,1.0,Mx,My,Mz
-                Mx = worksheet.cell(row,21).value
-                My = worksheet.cell(row,22).value
-                Mz = worksheet.cell(row,23).value
-                moment_id = re.compile(r"[^LC0].*")
-                moment_id = moment_id.findall(worksheet.title)[0]
-
-                moment_string_inertial = f"MOMENT,{moment_id},{ht_vt_mom_node_inertial},0,1.0,{Mx},{My},{Mz}"
+            ht_vt_mom_node_inertial = moment_card("HT-VT__MOMENT__INERTIAL",7,10,21,22,23,ht_vt_mom_node_inertial,text_file,worksheet)
     
-                if (row == 7):
-                    text_file.write(f"HT-VT__MOMENT__INERTIAL for {worksheet.title}")
-                    text_file.write("\n")
-                text_file.write(moment_string_inertial)
-                text_file.write("\n")
-                
-                ht_vt_mom_node_inertial +=1    
-
-            text_file.write("\n")
-
             # HT_VT_GRID_AERO
-            ht_vt_grid_node_aero = ht_vt_grid_node_intertial 
-            for row in range(7,10):
-                # MOMENT,MomentID,Node,0,1.0,Mx,My,Mz
-                x_aero = worksheet.cell(row,24).value
-                y_aero = worksheet.cell(row,25).value
-                z_aero = worksheet.cell(row,26).value
-
-                grid_string_aero= f"GRID,{ht_vt_grid_node_aero},0,{x_aero},{y_aero},{z_aero}"
-
-              
-                if (row == 7):
-                    text_file.write(f"HT-VT__GRID_AERO for {worksheet.title}")
-                    text_file.write("\n")
-                text_file.write(grid_string_aero)
-                text_file.write("\n")
-                
-                ht_vt_grid_node_aero += 1             
-            
-            text_file.write("\n")
+            ht_vt_grid_node_aero = ht_vt_grid_node_inertial 
+            ht_vt_grid_node_aero = grid_card("HT-VT__GRID__AERO",7,10,24,25,26,ht_vt_grid_node_aero,text_file,worksheet)
             
             # HT_VT_FORCE_INERTIAL
-            ht_vt_force_node_aero = ht_vt_force_node_intertial 
-            for row in range(7,10):
-                # MOMENT,MomentID,Node,0,1.0,Mx,My,Mz
-                Fx_aero = worksheet.cell(row,27).value
-                Fy_aero = worksheet.cell(row,28).value
-                Fz_aero = worksheet.cell(row,29).value
-                force_id = re.compile(r"[^LC0].*")
-                force_id = force_id.findall(worksheet.title)[0]
-                force_string_aero = f"FORCE,{force_id},{ht_vt_force_node_aero},0,1.0,{Fx_aero},{Fy_aero},{Fz_aero}"
-    
-                if (row == 7):
-                    text_file.write(f"HT-VT__FORCE__AERO for {worksheet.title}")
-                    text_file.write("\n")
-                text_file.write(force_string_aero)
-                text_file.write("\n")
-                
-                ht_vt_force_node_aero +=1
-
-            text_file.write("\n")
-
+            ht_vt_force_node_aero = ht_vt_force_node_inertial
+            ht_vt_force_node_aero = force_card("HT-VT__FORCE__AERO",7,10,27,28,29,ht_vt_force_node_aero,text_file,worksheet)
+       
             # VF 
-            VF_node = 3950001 + LC_id
-            text_file.write(f"VF__GRID__INERTIAL for {worksheet.title}")
-            text_file.write("\n")            
-            x_inertial =  worksheet.cell(19, 15).value   
-            y_inertial =  worksheet.cell(19, 16).value   
-            z_inertial =  worksheet.cell(19, 17).value   
-            VF_grid_inertial = f"GRID,{VF_node},0,{x_inertial},{y_inertial},{z_inertial}"
-            text_file.write(VF_grid_inertial)
-            text_file.write("\n")
+            VF_node_grid_i = 3950001 + LC_id
+            VF_node_grid_i = grid_card("VF__GRID__INERTIAL",19,20,15,16,17,VF_node_grid_i,text_file,worksheet)
+            
+            VF_node_force_i = 3950001 + LC_id
+            VF_node_force_i = force_card("VF__FORCE__INERTIAL",19,20,18,19,20,VF_node_force_i,text_file,worksheet)
 
-            text_file.write("\n")
+            VF_node_moment_i = 3950001 + LC_id
+            VF_node_moment_i = moment_card("VF__MOMENT__INERTIAL",19,20,21,22,23,VF_node_moment_i,text_file,worksheet)
 
-            text_file.write(f"VF__FROCE_INERTIAL for {worksheet.title}")
-            text_file.write("\n")            
-            Fx_inertial = worksheet.cell(19,18).value
-            Fy_inertial = worksheet.cell(19,19).value
-            Fz_inertial = worksheet.cell(19,20).value
-            force_id = re.compile(r"[^LC0].*")
-            force_id = force_id.findall(worksheet.title)[0]
-            VF_force_inertial = f"FORCE,{force_id},{VF_node},0,1.0,{Fx_inertial},{Fy_inertial},{Fz_inertial}"
-            text_file.write(VF_force_inertial)
-            text_file.write("\n")
+            VF_node_grid_aero = VF_node_grid_i
+            VF_node_grid_aero =  grid_card("VF__GRID__AERO",19,20,24,25,26,VF_node_grid_aero,text_file,worksheet)
 
-            text_file.write("\n")
+            VF_node_force_aero = VF_node_force_i
+            VF_node_force_aero = force_card("VF__FORCE__INERTIAL",19,20,27,28,29,VF_node_force_aero,text_file,worksheet)
 
-            text_file.write(f"VF__MOMENT__INERTIAL for {worksheet.title}")
-            text_file.write("\n")            
-            Mx = worksheet.cell(19,21).value
-            My = worksheet.cell(19,22).value
-            Mz = worksheet.cell(19,23).value
-            moment_id = re.compile(r"[^LC0].*")
-            moment_id = moment_id.findall(worksheet.title)[0]
-            moment_VF_inertial = f"MOMENT,{moment_id},{VF_node},0,1.0,{Mx},{My},{Mz}"
-            text_file.write(moment_VF_inertial)
-            text_file.write("\n")
-
-            text_file.write("\n")
-
-            text_file.write(f"VF__GRID AERO for {worksheet.title}")
-            text_file.write("\n")            
-            x_aero =  worksheet.cell(19, 24).value   
-            y_aero =  worksheet.cell(19, 25).value   
-            z_aero =  worksheet.cell(19, 26).value   
-            VF_grid_aero = f"GRID,{VF_node+1},0,{x_aero},{y_aero},{z_aero}"
-            text_file.write(VF_grid_aero)
-            text_file.write("\n")
-
-            text_file.write("\n")
-
-            text_file.write(f"VF__FORCE_AERO for {worksheet.title}")
-            text_file.write("\n")            
-            Fx_aero = worksheet.cell(19,27).value
-            Fy_aero = worksheet.cell(19,28).value
-            Fz_aero = worksheet.cell(19,29).value      
-            VF_force_aero = f"FORCE,{force_id},{VF_node+1},0,1.0,{Fx_aero},{Fy_aero},{Fz_aero}"
-            text_file.write(VF_force_aero)
-            text_file.write("\n")
-             
 
             text_file.close()
 
