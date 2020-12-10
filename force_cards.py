@@ -1,8 +1,6 @@
 import openpyxl as xl
 import re
 
-
-
 def force_card(col_1,x,y,z,file,worksheet):
     lc_number = None
     for row in range(1, worksheet.max_row): 
